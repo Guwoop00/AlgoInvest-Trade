@@ -16,7 +16,13 @@ def possible_combinations(actions, budget):
     best_profit = 0
 
     for i in range(1, 2**len(actions)):
-        action_set = [actions[action] for j, action in enumerate(actions) if (i >> j) & 1]
+        action_set = []
+        for j, action_name in enumerate(actions):
+            if (i >> j) & 1:
+                action = actions[action_name]
+                action_set.append(action)
+    # action_set = [actions[action] for j, action in enumerate(actions) if (i >> j) & 1]
+
         total_cost = sum(action['cost'] for action in action_set)
         total_profit = sum(((action['profit'] * action['cost']) / 100) for action in action_set)
 
@@ -55,13 +61,23 @@ def read_csv(filename):
     return actions
 
 
-# Example usage of read_csv function
 actions = read_csv("actions.csv")
 budget = 500
 best_actions, best_profit = possible_combinations(actions, budget)
 
 print("Actions chosen for an investment of", budget, "€:")
-for action in best_actions:
-    print("Action:", [key for key, value in actions.items() if value == action][0], "- Cost:", action['cost'], "€ - Profit:", action['profit'], "%")
+for action_details in best_actions:
+    action_name = None
+    for key, value in actions.items():
+        if value == action_details:
+            action_name = key
+            break
+
+    if action_name is not None:
+        print("Action:", action_name, "- Cost:", action_details['cost'], "€ - Profit:", action_details['profit'], "%")
+
+# for action in best_actions:
+#     print("Action:", [key for key, value in actions.items() if value == action][0], "- Cost:", action['cost'], "€ - Profit:", action['profit'], "%")
+
 
 print("Total profit after 2 years:", best_profit, "€")
