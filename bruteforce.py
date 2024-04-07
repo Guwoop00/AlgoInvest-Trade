@@ -1,4 +1,6 @@
 import csv
+import resource
+import time
 
 
 def possible_combinations(actions, budget):
@@ -15,13 +17,15 @@ def possible_combinations(actions, budget):
     best_actions = []
     best_profit = 0
 
+    start_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    start_time = time.time()
+
     for i in range(1, 2**len(actions)):
         action_set = []
         for j, action_name in enumerate(actions):
             if (i >> j) & 1:
                 action = actions[action_name]
                 action_set.append(action)
-    # action_set = [actions[action] for j, action in enumerate(actions) if (i >> j) & 1]
 
         total_cost = sum(action['cost'] for action in action_set)
         total_profit = sum(((action['profit'] * action['cost']) / 100) for action in action_set)
@@ -30,7 +34,13 @@ def possible_combinations(actions, budget):
             best_actions = action_set
             best_profit = total_profit
 
-    return best_actions, best_profit
+    end_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    end_time = time.time()
+
+    memory_usage = end_memory - start_memory
+    execution_time = end_time - start_time
+
+    return best_actions, best_profit, memory_usage, execution_time
 
 
 def read_csv(filename):
@@ -61,23 +71,23 @@ def read_csv(filename):
     return actions
 
 
-actions = read_csv("actions.csv")
-budget = 500
-best_actions, best_profit = possible_combinations(actions, budget)
+if __name__ == "__main__":
+    actions = read_csv("actiontest1.csv")
+    budget = 500
+    best_actions, best_profit, memory_usage, execution_time = possible_combinations(actions, budget)
 
-print("Actions chosen for an investment of", budget, "€:")
-for action_details in best_actions:
-    action_name = None
-    for key, value in actions.items():
-        if value == action_details:
-            action_name = key
-            break
+    print("Actions chosen for an investment of", budget, "€:")
+    for action_details in best_actions:
+        action_name = None
+        for key, value in actions.items():
+            if value == action_details:
+                action_name = key
+                break
 
-    if action_name is not None:
-        print("Action:", action_name, "- Cost:", action_details['cost'], "€ - Profit:", action_details['profit'], "%")
+        if action_name is not None:
+            print("Action:", action_name, "- Cost:", action_details['cost'],
+                  "€ - Profit:", action_details['profit'], "%")
 
-# for action in best_actions:
-#     print("Action:", [key for key, value in actions.items() if value == action][0], "- Cost:", action['cost'], "€ - Profit:", action['profit'], "%")
-
-
-print("Total profit after 2 years:", best_profit, "€")
+    print("Total profit after 2 years:", best_profit, "€")
+    print("Memory usage:", memory_usage, "bytes")
+    print("Execution time:", execution_time, "seconds")

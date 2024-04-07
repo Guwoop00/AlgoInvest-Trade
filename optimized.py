@@ -1,66 +1,86 @@
 import csv
+import time
+import resource
+
+MAX_BUDGET = 500
 
 
-def possible_combinations(actions, budget):
-    """
-    Finds the possible combinations of actions within the given budget.
+def main():
+    shares_list = read_csv("actions.csv")
+    display_results(find_best_action(shares_list))
 
-    Args:
-        actions (list): A list containing dictionaries with actions details (cost and profit).
-        budget (float): The budget available for investment.
 
-    Returns:
-        tuple: A tuple containing the best combination of actions and the total profit generated.
-    """
-    dp = [None] * (int(budget) + 1)
-    dp[0] = ([], 0)
+def find_best_action(shares_list):
+    budget = int(MAX_BUDGET * 100)
+    shares_total = len(shares_list)
+    cost = []
+    profit = []
 
-    for action in actions:
-        for j in range(int(budget), int(action['Coût']) - 1, -1):
-            if dp[j - int(action['Coût'])] is not None:
-                new_profit = dp[j - int(action['Coût'])][1] + action['Bénéfice'] * action['Coût'] / 100
-                if dp[j] is None or new_profit > dp[j][1]:
-                    new_actions = dp[j - int(action['Coût'])][0] + [action]
-                    dp[j] = (new_actions, new_profit)
+    for share in shares_list:
+        cost.append(share['Cost'])
+        profit.append(share['Profit'])
 
-    return dp[int(budget)]
+    dp = [[0 for _ in range(budget + 1)] for _ in range(shares_total + 1)]
+
+    for i in range(1, shares_total + 1):
+        for j in range(1, budget + 1):
+            if cost[i - 1] <= j:
+                dp[i][j] = max(profit[i - 1] + dp[i - 1][j - cost[i - 1]], dp[i - 1][j])
+            else:
+                dp[i][j] = dp[i - 1][j]
+
+    best_profit = []
+    while budget >= 0 and shares_total >= 0:
+        if dp[shares_total][budget] == dp[shares_total - 1][budget - cost[shares_total - 1]] + profit[shares_total - 1]:
+            best_profit.append(shares_list[shares_total - 1])
+            budget -= cost[shares_total - 1]
+        shares_total -= 1
+
+    return best_profit
+
+
+def display_results(best_profit):
+    print(f"\nMost profitable investment ({len(best_profit)} shares):\n")
+    cost = []
+    profit = []
+
+    for item in best_profit:
+        print(f"{item['Action']} {item['Cost'] / 100} € +{item['Profit'] / 100} €")
+        cost.append(item['Cost'] / 100)
+        profit.append(item['Profit'])
+
+    print("\nTotal cost:", sum(cost), "€")
+    print("Profit after 2 years: +", sum(profit) / 100, "€")
 
 
 def read_csv(filename):
-    """
-    Reads data from a CSV file and returns a list of dictionaries.
-
-    Args:
-        filename (str): The name of the CSV file to read.
-
-    Returns:
-        list: A list containing dictionaries with the data read from the CSV file.
-              Each dictionary represents an action with keys 'Coût' and 'Bénéfice'.
-    """
     actions = []
 
     try:
         with open(filename, mode='r', newline='') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                name = row['Action']
-                cost = float(row['Coût'])
-                profit = float(row['Bénéfice'])
-                actions.append({'Action': name, 'Coût': cost, 'Bénéfice': profit})
+                if float(row['Cost']) > 0 and float(row['Profit']) > 0:
+                    cost = int(float(row['Cost']) * 100)
+                    profit = float(row['Profit']) * cost / 100
+                    actions.append({'Action': row['Share'], 'Cost': cost, 'Profit': profit})
     except FileNotFoundError:
-        print(f"Error: The file '{filename}' could not be found.")
+        print(f"Error: File '{filename}' not found.")
     except Exception as e:
-        print(f"Error while reading CSV file '{filename}': {e}")
+        print(f"Error reading CSV file '{filename}': {e}")
+
     return actions
 
 
 # Lunch
-actions = read_csv("actions.csv")
-budget = 500
-best_actions, best_profit = possible_combinations(actions, budget)
+if __name__ == "__main__":
 
-print("Actions chosen for an investment of", budget, "€:")
-for action in best_actions:
-    print(action['Action'], "Cost:", action['Coût'], "€ - Profit:", action['Bénéfice'], "%")
-
-print("Total profit after 2 years:", best_profit, "€")
+    start_time = time.time()
+    start_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    actions = read_csv("actiontest2.csv")
+    best_profit = find_best_action(actions)
+    display_results(best_profit)
+    end_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    end_time = time.time()
+    print("\nTime elapsed:", end_time - start_time, "seconds")
+    print("Memory usage:", end_memory - start_memory, "bytes")
