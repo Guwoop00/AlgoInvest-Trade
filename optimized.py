@@ -1,13 +1,7 @@
 import csv
 import time
-import resource
 
 MAX_BUDGET = 500
-
-
-def main():
-    shares_list = read_csv("actions.csv")
-    display_results(find_best_action(shares_list))
 
 
 def find_best_action(shares_list):
@@ -76,11 +70,12 @@ def read_csv(filename):
 if __name__ == "__main__":
 
     start_time = time.time()
-    start_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-    actions = read_csv("actiontest2.csv")
+
+    actions = read_csv("actions.csv")
     best_profit = find_best_action(actions)
     display_results(best_profit)
-    end_memory = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+
     end_time = time.time()
-    print("\nTime elapsed:", end_time - start_time, "seconds")
-    print("Memory usage:", end_memory - start_memory, "bytes")
+
+    execution_time = end_time - start_time
+    print("\nTime elapsed:", execution_time, "seconds")
