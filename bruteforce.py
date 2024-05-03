@@ -1,23 +1,29 @@
 import csv
 import time
+from typing import Dict, List, Tuple
 
 
-def possible_combinations(actions, budget):
+def possible_combinations(
+    actions: Dict[str, Dict[str, float]], budget: float
+) -> Tuple[List[Dict[str, float]], float]:
     """
-    Finds the possible combinations of actions within the given budget.
+    Find the best combination of actions within the given budget.
 
     Args:
-        actions (dict): A dictionary containing actions as keys and their details (cost and profit) as values.
-        budget (float): The budget available for investment.
-        start_time (float): The start time of the execution.
+        actions (dict): A dictionary containing information about available actions.
+                        Keys are action names, and values are dictionaries with keys 'cost' and 'profit'.
+        budget (float): The total budget available for investment.
 
     Returns:
-        tuple: A tuple containing the best combination of actions and the total profit generated.
+        tuple: A tuple containing the best combination of actions and the corresponding total profit.
+               The best combination is represented as a list of dictionaries, where each dictionary
+               contains information about a chosen action (keys: 'cost' and 'profit').
+               The total profit is a float value.
     """
     best_actions = []
     best_profit = 0
 
-    for i in range(1, 2**len(actions)):
+    for i in range(1, 2 ** len(actions)):
         action_set = []
         total_cost = 0
         total_profit = 0
@@ -26,8 +32,8 @@ def possible_combinations(actions, budget):
             if (i >> j) & 1:
                 action = actions[action_name]
                 action_set.append(action)
-                total_cost += action['cost']
-                total_profit += action['profit'] * action['cost'] / 100
+                total_cost += action["cost"]
+                total_profit += action["profit"] * action["cost"] / 100
 
         if total_cost <= budget and total_profit > best_profit:
             best_actions = action_set
@@ -36,27 +42,27 @@ def possible_combinations(actions, budget):
     return best_actions, best_profit
 
 
-def read_csv(filename):
+def read_csv(filename: str) -> Dict[str, Dict[str, float]]:
     """
-    Reads data from a CSV file and returns a dictionary.
+    Read data from a CSV file and return a dictionary containing information about available actions.
 
     Args:
-        filename (str): The name of the CSV file to read.
+        filename (str): The name of the CSV file.
 
     Returns:
-        dict: A dictionary containing the data read from the CSV file.
-              Keys are action names and values are dictionaries with keys 'cost' and 'profit'.
+        dict: A dictionary containing information about available actions.
+              Keys are action names, and values are dictionaries with keys 'cost' and 'profit'.
     """
     actions = {}
 
     try:
-        with open(filename, mode='r', newline='') as file:
+        with open(filename, mode="r", newline="") as file:
             reader = csv.DictReader(file)
             for row in reader:
-                action = row['Share']
-                cost = float(row['Cost'])
-                profit = float(row['Profit'])
-                actions[action] = {'cost': cost, 'profit': profit}
+                action = row["Share"]
+                cost = float(row["Cost"])
+                profit = float(row["Profit"])
+                actions[action] = {"cost": cost, "profit": profit}
     except FileNotFoundError:
         print(f"Error: The file '{filename}' could not be found.")
     except Exception as e:
@@ -65,7 +71,6 @@ def read_csv(filename):
 
 
 if __name__ == "__main__":
-
     start_time = time.time()
 
     actions = read_csv("actions.csv")
@@ -78,10 +83,19 @@ if __name__ == "__main__":
 
     print("Actions chosen for an investment of", budget, "€:")
     for action_details in best_actions:
-        action_name = next((key for key, value in actions.items() if value == action_details), None)
+        action_name = next(
+            (key for key, value in actions.items() if value == action_details), None
+        )
         if action_name is not None:
-            print("Action:", action_name, "- Cost:", action_details['cost'],
-                  "€ - Profit:", action_details['profit'], "%")
+            print(
+                "Action:",
+                action_name,
+                "- Cost:",
+                action_details["cost"],
+                "€ - Profit:",
+                action_details["profit"],
+                "%",
+            )
 
     print("Total profit after 2 years:", round(best_profit, 2), "€")
     print("Execution time:", execution_time, "seconds")
